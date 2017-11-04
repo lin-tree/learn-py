@@ -11,7 +11,8 @@ READABLE_POINT = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', '
 class Card:
 
     """
-    扑克牌的类
+    扑克牌的类\n
+    使用Card("2C")或Card("2", "C")创建草花2
     """
 
     def __init__(self, pattern, suit=None):
@@ -62,28 +63,6 @@ class Card:
     def _set_pattern(self, value):
         self._point = POINT_TABLE.index(value[0])
         self._suit = SUIT_TABLE.index(value[1])
-
-_DECK = [Card(point, suit) for point in POINT_TABLE for suit in SUIT_TABLE]
-
-def shuffle():
-    """
-    洗牌
-    """
-    random.shuffle(_DECK)
-
-def gen_pair():
-    """
-    获取两份手牌
-    """
-    shuffle()
-    return _DECK[0:5], _DECK[5:10]
-
-def gen_handcard():
-    """
-    获取一份手牌
-    """
-    shuffle()
-    return _DECK[0:5]
 
 def parse_handcard(card_str):
     """

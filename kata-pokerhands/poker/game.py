@@ -18,12 +18,33 @@ class Pattern(Enum):
     FOUR_OF_A_KIND = 8
     STRAIGHT_FLUSH = 9
 
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+_PATTERN_MODE = {
+    (True, True): Pattern.STRAIGHT_FLUSH,
+    (True, False): Pattern.STRAIGHT,
+    (False, True): Pattern.FLUSH,
+    '14': Pattern.FOUR_OF_A_KIND,
+    '23': Pattern.FULL_HOUSE,
+    '113': Pattern.THREE_OF_A_KIND,
+    '122': Pattern.TWO_PAIRS,
+    '1112': Pattern.PAIR,
+    '11111': Pattern.HIGH_CARD
+}
+
 class HandCard:
+    """
+    手牌
+    cards: 5张Card构成的list
+    """
     def __init__(self, cards):
         self._cards = cards
-        is_flush = True
-
         self._point_pattern = {}
+        is_flush = True
         max_point = min_point = cards[0].point
         for c in cards:
             point = c.point
@@ -36,23 +57,8 @@ class HandCard:
         point_mode = ''.join(map(str, sorted(self._point_pattern.values())))
         is_straight = point_mode == '11111' and max_point - min_point == len(cards) - 1
 
-        if is_straight:
-            self._pattern = is_flush and Pattern.STRAIGHT_FLUSH or Pattern.STRAIGHT
-        elif is_flush:
-            self._pattern = Pattern.FLUSH
-        elif point_mode == '14':
-            self._pattern = Pattern.FOUR_OF_A_KIND
-        elif point_mode == '23':
-            self._pattern = Pattern.FULL_HOUSE
-        elif point_mode == '113':
-            self._pattern = Pattern.THREE_OF_A_KIND
-        elif point_mode == '122':
-            self._pattern = Pattern.TWO_PAIRS
-        elif point_mode == '1112':
-            self._pattern = Pattern.PAIR
-        elif point_mode == '11111':
-            self._pattern = Pattern.HIGH_CARD
-        else:
+        self._pattern = _PATTERN_MODE.get((is_straight, is_flush)) or _PATTERN_MODE.get(point_mode)
+        if self._pattern is None:
             raise Exception('格式不佳')
 
     def _show(self):
@@ -65,8 +71,12 @@ class HandCard:
         基本大小（相同牌型的比较用）\n
         点数按照数量从大到小排列\n
         点数相同的按照点数从大到小排列\n
-        TC TS 4S 4C TD Pattern.FULL_HOUSE \n
-        base_value [8, 2] <- ('10', '4')
+        2C 2S 5S AC 2D \n
+        - 3 张 ‘2’(对应point为0)
+        - 1 张 'A'(对应point为12)
+        - 1 张 '5'(对应point为3)
+        
+        base_value [0, 12, 3] <- ('2', 'A', '5')
         """
         return sorted(self._point_pattern.keys(), key=lambda x: [self._point_pattern[x], x], reverse=True)
 
@@ -74,31 +84,31 @@ class HandCard:
     def pattern(self):
         return self._pattern
 
-
     def __str__(self):
         return ' '.join(map(str, self._cards))
 
-def judge(cards1, cards2):
+def judge(handcard1, handcard2):
     """
-    判断两副手牌的大小
+    判断两副手牌的大小\n
+    handcard1, handcard2: 两副手牌\n
+    return: code, reason\n
+    - code: 0表示平局， 1表示前者胜，2表示后者胜利
+    - resaon: 原因（牌型或关键牌）
     """
-    h1 = HandCard(cards1)
-    h2 = HandCard(cards2)
-    p1 = h1.pattern.value
-    p2 = h2.pattern.value
-    if p1 == p2:
-        bv1 = h1.base_value()
-        bv2 = h2.base_value()
+    pattern1, pattern2 = handcard1.pattern, handcard2.pattern
+    name1, name2 = pattern1.name, pattern2.name
+    if pattern1 == pattern2:
+        bv1, bv2 = handcard1.base_value(), handcard2.base_value()
         for i in range(0, len(bv1)):
             if bv1[i] > bv2[i]:
-                return 1, '%s:%s>%s' % (str(h1.pattern), POINT_TABLE[bv1[i]], POINT_TABLE[bv2[i]])
+                return 1, '%s: %s > %s' % (name1, POINT_TABLE[bv1[i]], POINT_TABLE[bv2[i]])
             elif bv1[i] < bv2[i]:
-                return -1, '%s:%s>%s' % (str(h2.pattern), POINT_TABLE[bv2[i]], POINT_TABLE[bv1[i]])
-        return 0, str(h1.pattern)
-    elif p1 > p2:
-        return 1, '%s > %s' % (str(h1.pattern), str(h2.pattern))
+                return -1, '%s: %s > %s' % (name2, POINT_TABLE[bv2[i]], POINT_TABLE[bv1[i]])
+        return 0, name1
+    elif pattern1 > pattern2:
+        return 1, '%s > %s' % (name1, name2)
     else:
-        return -1, '%s > %s' % (str(h2.pattern), str(h1.pattern))
+        return -1, '%s > %s' % (name2, name1)
 
 def _test():
     """
@@ -121,7 +131,5 @@ def _test():
         hand_card._show()
         print('')
 
-
 if __name__ == '__main__':
-    
     _test()
