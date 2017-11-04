@@ -7,13 +7,15 @@ import poker.game as game
 
 _TEST_DATA = [
     # [input, winner, reason]
-    ['White: TC JC QC KC AC  Blcak: TH JH QH KH AH', 'Tie', 'Pattern.STRAIGHT_FLUSH'],
+    ['White: TC JC QC KC AC  Black: TH JH QH KH AH', 'Tie', 'Pattern.STRAIGHT_FLUSH'],
+    ['White: 2C 2H 4S 4D 6C  Black: 5H 3H 2H KH 3C', 'White', 'Pattern.TWO_PAIRS > Pattern.PAIR'],
+    ['White: 2C 2H 4S QD AC  Black: 2D 3H 2S AH KC', 'Black', 'Pattern.PAIR:K>Q'],
     ['Black: 2H 3D 5S 9C KD  White: 2C 3H 4S 8C AH', 'White', 'Pattern.HIGH_CARD:A>K'],
     ['Black: 2H 4S 4C 2D 4H  White: 2S QS 2S QH 2S', 'Black', 'Pattern.FULL_HOUSE:4>2'],
     ['Pink: 2H 5S 4S 8S 7C  Blue: 8C JS TD 4H QC', 'Blue', 'Pattern.HIGH_CARD:Q>8'],
     ['Pink: 7D 6H 2D 3C 2C  Blue: AS TD AD 4D QH', 'Blue', 'Pattern.PAIR:A>2'],
     ['Pink: 3H KC 2D 2C TH  Blue: 6C KC 4H 8C 2S', 'Pink', 'Pattern.PAIR > Pattern.HIGH_CARD'],
-    ['Pink: 6C KC 4S JS 3D  Blue: JH KS 4H QC 9H', 'Tie', 'Pattern.HIGH_CARD'],
+    ['Pink: 6C KC 4S JS 3D  Blue: JH KS 4H QC 9H', 'Blue', 'Pattern.HIGH_CARD:Q>J'],
     ['Pink: AH 2S 7H 9H 8C  Blue: 8C 3H 3D 8H JS', 'Blue', 'Pattern.TWO_PAIRS > Pattern.HIGH_CARD']
 ]
 
@@ -31,8 +33,8 @@ def get_result(cards1, cards2):
     """
     通过手牌获取结果
     """
-    code, reason = game.judge(h1[1], h2[1])
-    winner = [h2[0], 'Tie', h1[0]][code + 1]
+    code, reason = game.judge(cards1[1], cards2[1])
+    winner = [cards2[0], 'Tie', cards1[0]][code + 1]
     return winner, reason
 
 def test():
