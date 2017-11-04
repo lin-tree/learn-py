@@ -23,21 +23,18 @@ class HandCard:
         self._cards = cards
         is_flush = True
 
-        points = []
+        self._point_pattern = {}
         max_point = min_point = cards[0].point
         for c in cards:
-            max_point = max(max_point, c.point)
-            min_point = min(min_point, c.point)
-            points.append(c.point)
+            point = c.point
+            max_point = max(max_point, point)
+            min_point = min(min_point, point)
+            count = self._point_pattern.get(point)
+            self._point_pattern[point] = count and count + 1 or 1
             if c.suit != cards[0].suit:
                 is_flush = False
-        is_straight = max_point - min_point == len(cards) - 1
-
-        self._point_pattern = {}
-        for p in points:
-            c = self._point_pattern.get(p)
-            self._point_pattern[p] = c and c + 1 or 1
         point_mode = ''.join(map(str, sorted(self._point_pattern.values())))
+        is_straight = point_mode == '11111' and max_point - min_point == len(cards) - 1
 
         if is_straight:
             self._pattern = is_flush and Pattern.STRAIGHT_FLUSH or Pattern.STRAIGHT
@@ -66,10 +63,12 @@ class HandCard:
     def base_value(self):
         """
         基本大小（相同牌型的比较用）\n
+        点数按照数量从大到小排列\n
+        点数相同的按照点数从大到小排列\n
         TC TS 4S 4C TD Pattern.FULL_HOUSE \n
         base_value [8, 2] <- ('10', '4')
         """
-        return sorted(self._point_pattern.keys(), key=lambda x: self._point_pattern[x]*10 + x, reverse=True)
+        return sorted(self._point_pattern.keys(), key=lambda x: [self._point_pattern[x], x], reverse=True)
 
     @property
     def pattern(self):
@@ -80,6 +79,9 @@ class HandCard:
         return ' '.join(map(str, self._cards))
 
 def judge(cards1, cards2):
+    """
+    判断两副手牌的大小
+    """
     h1 = HandCard(cards1)
     h2 = HandCard(cards2)
     p1 = h1.pattern.value
@@ -92,8 +94,7 @@ def judge(cards1, cards2):
                 return 1, '%s:%s>%s' % (str(h1.pattern), POINT_TABLE[bv1[i]], POINT_TABLE[bv2[i]])
             elif bv1[i] < bv2[i]:
                 return -1, '%s:%s>%s' % (str(h2.pattern), POINT_TABLE[bv2[i]], POINT_TABLE[bv1[i]])
-            else:
-                return 0, str(h1.pattern)
+        return 0, str(h1.pattern)
     elif p1 > p2:
         return 1, '%s > %s' % (str(h1.pattern), str(h2.pattern))
     else:
